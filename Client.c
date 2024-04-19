@@ -16,8 +16,9 @@ int main() {
     char *shared_memory_ptr;
     struct stat stat_buffer;
 
+    restart:
     // Open the shared memory object
-    shared_memory_fd = shm_open(shared_memory_name, O_RDONLY, 0666);
+    shared_memory_fd = shm_open(shared_memory_name, O_RDWR, 0666);
     if (shared_memory_fd == -1) {
         perror("shm_open");
         return 1;
@@ -29,4 +30,10 @@ int main() {
         close(shared_memory_fd);
         return 1;
     }
+    if (stat_buffer.st_size==0)//creted by client, not by creator
+    {
+        shm_unlink(shared_memory_name)
+    }
+    
+    
 }
