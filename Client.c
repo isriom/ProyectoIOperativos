@@ -10,7 +10,7 @@
 
 #include "Constants.h"
 
-int main() {
+int main(int argc, char *argv[]) {
     const char *shared_memory_name = "/my_shared_memory";
     int shared_memory_fd;
     char *shared_memory_ptr;
@@ -18,7 +18,7 @@ int main() {
 
     restart:
     // Open the shared memory object
-    shared_memory_fd = shm_open(shared_memory_name, O_RDWR, 0666);
+    shared_memory_fd = shm_open(shared_memory_name, O_RDWR, S_IRWXO);
     if (shared_memory_fd == -1) {
         perror("shm_open");
         return 1;
@@ -32,7 +32,8 @@ int main() {
     }
     if (stat_buffer.st_size==0)//creted by client, not by creator
     {
-        shm_unlink(shared_memory_name)
+        shm_unlink(shared_memory_name);
+        fprintf(stderr, "Usage: %s <memory_size> <data_type>\n", argv[0]);
     }
     
     

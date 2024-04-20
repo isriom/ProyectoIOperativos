@@ -28,4 +28,6 @@ struct statistics{
 const int descriptor_size = sizeof(struct descriptor);
 const int semaphore_size = sizeof(sem_t);
 const int statistics_size =sizeof(struct statistics);
+
+const char *CLEAR_SCREEN_ANSI = "\e[1;1H\e[2J"; //https://stackoverflow.com/questions/2347770/how-do-you-clear-the-console-screen-in-c
 #endif
