@@ -15,10 +15,17 @@ struct descriptor{
     sem_t buffer_writer_semaphore;
 };
 
-
-
+struct statistics{
+    double reconstructor_slp_t;
+    double client_slp_t;
+    double reconstructor_usr_mode_t;
+    double reconstructor_krnl_mode_t;
+    double client_usr_mode_t;
+    double client_krnl_mode_t;
+    long transfered_characters_n;
+    long characters_in_buffer_n;
+};
 const int descriptor_size = sizeof(struct descriptor);
 const int semaphore_size = sizeof(sem_t);
-
-
+const int statistics_size =sizeof(struct statistics);
 #endif
