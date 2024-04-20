@@ -78,8 +78,8 @@ int main(int argc, char *argv[]) {
     stadistics->transfered_characters_n=0;
     stadistics->characters_in_buffer_n=0;
 
-    char *datetimes=shared_memory_ptr+descriptor_size+statistics_size;
-    char *buffer=datetimes+shared_memory_length*sizeof(time_t);
+    time_t *datetimes=shared_memory_ptr+descriptor_size+statistics_size;
+    void *buffer=datetimes+shared_memory_length*sizeof(time_t);
     
     while (memory_desc->data_size>0)
     {
