@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include <gtk-3.0/gtk/gtk.h>
 
 #include "Constants.h"
 #include "Libs/libFort/libfort-0.4.2/lib/fort.h"
@@ -97,10 +98,10 @@ int main(int argc, char *argv[]) {
     {
         int index=i*2;
         char data1[2]="  ";
-        data1[1]=*(buffer+index);
+        data1[1]=*(char *)(buffer+index);
         data1[2]=*"\0";
         char data2[2]="  ";
-        data2[1]=*(buffer+index+1);
+        data2[1]=*(char *)(buffer+index+1);
         data2[2]=*"\0";
         int error=ft_printf_ln(table,"%d|%s|%d|%d|%s|%d", index, data1,*(datetimes+index),index+1, data1,*(datetimes+index+1));
         if (error==-1)
