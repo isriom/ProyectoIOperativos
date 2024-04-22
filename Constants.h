@@ -22,4 +22,5 @@ struct statistics{
     long transfered_characters_n;
     long characters_in_buffer_n;
 };
+
 #endif

@@ -11,11 +11,33 @@
 #include<pthread.h>
 #include "Reconstructor.h"
 #include "Constants.h"
+GtkWidget *label_cur_char;
+GtkWidget *label_date_time;
+GtkWidget *text_view;
+GtkTextBuffer *buffer;
+void update_date_time(long date_time){
+    struct tm *local_time = localtime(&date_time);
+    char *date_time_str = malloc(strlen(asctime(local_time)) + 1);
+    strcpy(date_time_str, asctime(local_time));
+    char *date_time_msg = malloc(30 + strlen(date_time_str) + 1);
+    sprintf(date_time_msg, "Fecha y hora de insersión: \n%s", date_time_str);
+    gtk_label_set_text(GTK_LABEL(label_date_time),date_time_msg);
+    free(date_time_str);
+    free(date_time_msg);
+}
 
+void update_cur_char(char curr_char){
+    char *curr_char_msg = malloc(sizeof(char)*21+1);
+    sprintf(curr_char_msg, "Se está insertando: %c",curr_char);
+    gtk_label_set_text(GTK_LABEL(label_cur_char),curr_char_msg);
+    free(curr_char_msg);
+}
 
+void update_text_view(char *text){
+    
+    gtk_text_buffer_set_text(buffer, text, -1);
+}
 void *UI(void *arguments){
-//void *UI(int argc, char *argv[], long date_time, char *curr_char) {
-    //argc, argv, t, &curr;
     // Initialize GTK
 
     struct ui_arguments *args = (struct ui_arguments*)arguments;
@@ -31,24 +53,16 @@ void *UI(void *arguments){
     // Create a vertical box container
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(window), vbox);
-    //curchar message
-    char cur_char_msg[24];
-    sprintf(cur_char_msg, "Se está insertando: %c",args->curr_char);
+    
     // Create the first label
-    GtkWidget *label_cur_char = gtk_label_new(cur_char_msg);
+    label_cur_char = gtk_label_new("");
+    update_cur_char(args->curr_char);
     gtk_box_pack_start(GTK_BOX(vbox), label_cur_char, FALSE, FALSE, 0);
 
-    //Date format
-    struct tm *local_time = localtime(&args->date_time);
-    char date_time_str[24];
-    strcpy(date_time_str, asctime(local_time));
     
     // Create the second label
-
-    char date_time_msg[52];
-
-    sprintf(date_time_msg, "Fecha y hora de insersión: \n%s", date_time_str);
-    GtkWidget *label_date_time = gtk_label_new(date_time_msg);
+    label_date_time = gtk_label_new("");
+    update_date_time(args->date_time);
     gtk_box_pack_start(GTK_BOX(vbox), label_date_time, FALSE, FALSE, 0);
     
     // Create a scrolled window to contain the text area
@@ -58,7 +72,7 @@ void *UI(void *arguments){
     gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, TRUE, TRUE, 0);
     
     // Create the text buffer and set initial text
-    GtkTextBuffer *buffer = gtk_text_buffer_new(NULL);
+    buffer = gtk_text_buffer_new(NULL);
 
     // Create a 300-character string
     char myString[301]; // 300 characters + null terminator
@@ -67,10 +81,9 @@ void *UI(void *arguments){
     }
     myString[300] = '\0'; // Null terminator
 
-    gtk_text_buffer_set_text(buffer, myString, -1);
-    
+    update_text_view(myString);
     // Create the text view and set the buffer
-    GtkWidget *text_view = gtk_text_view_new_with_buffer(buffer);
+    text_view = gtk_text_view_new_with_buffer(buffer);
     
     // Set text view as not editable
     gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
@@ -102,30 +115,17 @@ int main(int argc, char *argv[]) {
         close(shared_memory_fd);
         return 1;
     }*/
-    time_t t = time(NULL);
-    char curr = 's';
+
     struct ui_arguments *args = malloc(sizeof(struct ui_arguments));
 
+
+    time_t t = time(NULL);
+
     args->date_time = t;
+
+    char curr = 's';
     args->curr_char = curr;
     args->argc = argc;
-
-    // Allocate memory for argv in args
-    args->argv = malloc(argc * sizeof(char *));
-    if (args->argv == NULL) {
-        // Handle memory allocation failure
-        printf("could not allocate argv");
-        return -1;
-    }
-    for (int i = 0; i < argc; i++) {
-        // Allocate memory for each string and copy the content
-        args->argv[i] = malloc(strlen(argv[i]) + 1);
-        if (args->argv[i] == NULL) {
-            printf("could not allocate the char in argv");
-            return -1;
-        }
-        strcpy(args->argv[i], argv[i]);
-    }
 
     pthread_t ui_thread;
 
@@ -134,12 +134,7 @@ int main(int argc, char *argv[]) {
         printf("nope\n");
         return -1;
     }
-   
-    //GUI call
-    for (int i = 0; i<5; i++){
-        t = time(NULL);
-        sleep(5);
-    }
+    
     pthread_join(ui_thread, NULL);
     return 0;
 }
