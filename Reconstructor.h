@@ -24,4 +24,5 @@ void update_cur_char(char curr_char);
 void update_text_view(char *text);
 void *UI(void *arguments);
 void dequeue();
+char* read_file(const char* filename);
 #endif

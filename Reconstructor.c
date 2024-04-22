@@ -19,6 +19,7 @@ unsigned int interval = 1;
 
 int shared_memory_fd;
 FILE *Data_fd;
+
 void *shared_memory_ptr;
 
 struct stat stat_buffer;
@@ -142,6 +143,12 @@ void dequeue(){
     //update UI
     update_cur_char(cur_char);
     update_date_time(date_time);
+
+    char* file_contents = read_file(filepath);
+    if (file_contents != NULL) {
+        update_text_view(file_contents);
+        g_free(file_contents);
+    }
     //up writer semaphore
     sem_post(&(memory_desc->buffer_writer_semaphore));
     
@@ -227,4 +234,29 @@ void *UI(void *arguments){
     
     // Start the GTK main loop
     gtk_main();
+}
+
+char* read_file(const char* filename) {
+    FILE* file = fopen(filename, "r");
+    if (!file) {
+        g_print("Error opening file!\n");
+        return NULL;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char* buffer = malloc(length + 1);
+    if (!buffer) {
+        fclose(file);
+        g_print("Memory error!\n");
+        return NULL;
+    }
+
+    fread(buffer, 1, length, file);
+    buffer[length] = '\0';
+    fclose(file);
+
+    return buffer;
 }
