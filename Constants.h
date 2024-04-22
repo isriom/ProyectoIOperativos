@@ -21,5 +21,5 @@ struct statistics{
     double client_krnl_mode_t;
     long transfered_characters_n;
     long characters_in_buffer_n;
-}
+};
 #endif

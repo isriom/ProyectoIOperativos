@@ -8,11 +8,19 @@
 #include <sys/types.h>
 #include <gtk/gtk.h>
 #include <time.h>
+#include<pthread.h>
+#include "Reconstructor.h"
 #include "Constants.h"
 
-UI(int argc, char *argv[], long date_time, char *curr_char) {
+
+void *UI(void *arguments){
+//void *UI(int argc, char *argv[], long date_time, char *curr_char) {
+    //argc, argv, t, &curr;
     // Initialize GTK
-    gtk_init(&argc, &argv);
+
+    struct ui_arguments *args = (struct ui_arguments*)arguments;
+    int argc = args->argc;
+    gtk_init(&argc, NULL);
     
     // Create the main window
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -25,13 +33,13 @@ UI(int argc, char *argv[], long date_time, char *curr_char) {
     gtk_container_add(GTK_CONTAINER(window), vbox);
     //curchar message
     char cur_char_msg[24];
-    sprintf(cur_char_msg, "Se está insertando: %c",*curr_char);
+    sprintf(cur_char_msg, "Se está insertando: %c",args->curr_char);
     // Create the first label
     GtkWidget *label_cur_char = gtk_label_new(cur_char_msg);
     gtk_box_pack_start(GTK_BOX(vbox), label_cur_char, FALSE, FALSE, 0);
 
     //Date format
-    struct tm *local_time = localtime(&date_time);
+    struct tm *local_time = localtime(&args->date_time);
     char date_time_str[24];
     strcpy(date_time_str, asctime(local_time));
     
@@ -96,8 +104,42 @@ int main(int argc, char *argv[]) {
     }*/
     time_t t = time(NULL);
     char curr = 's';
-    //GUI call
-    UI(argc, argv, t, &curr);
+    struct ui_arguments *args = malloc(sizeof(struct ui_arguments));
 
+    args->date_time = t;
+    args->curr_char = curr;
+    args->argc = argc;
+
+    // Allocate memory for argv in args
+    args->argv = malloc(argc * sizeof(char *));
+    if (args->argv == NULL) {
+        // Handle memory allocation failure
+        printf("could not allocate argv");
+        return -1;
+    }
+    for (int i = 0; i < argc; i++) {
+        // Allocate memory for each string and copy the content
+        args->argv[i] = malloc(strlen(argv[i]) + 1);
+        if (args->argv[i] == NULL) {
+            printf("could not allocate the char in argv");
+            return -1;
+        }
+        strcpy(args->argv[i], argv[i]);
+    }
+
+    pthread_t ui_thread;
+
+    //creating ui thread
+    if (pthread_create(&ui_thread, NULL, UI, args) != 0){
+        printf("nope\n");
+        return -1;
+    }
+   
+    //GUI call
+    for (int i = 0; i<5; i++){
+        t = time(NULL);
+        sleep(5);
+    }
+    pthread_join(ui_thread, NULL);
     return 0;
 }
