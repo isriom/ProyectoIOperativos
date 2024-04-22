@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     stadistics->characters_in_buffer_n=0;
 
     time_t *datetimes=shared_memory_ptr+descriptor_size+statistics_size;
-    void *buffer=datetimes+shared_memory_length*sizeof(time_t);
+    void *buffer=shared_memory_ptr+descriptor_size+statistics_size+shared_memory_length*sizeof(time_t);
     
     while (memory_desc->data_size>0)
     {
@@ -97,18 +97,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < shared_memory_length/2; i++)
     {
         int index=i*2;
-        char data1[2]="  ";
-        data1[0]=*(char *)(buffer+index);
-        data1[1]=*"\0";
-        char data2[2]="  ";
-        data2[0]=*(char *)(buffer+index+1);
-        data2[1]=*"\0";
-        int error=ft_printf_ln(table,"%d|%s|%d|%d|%s|%d", index, data1,*(datetimes+index),index+1, data1,*(datetimes+index+1));
-        if (error==-1)
-        {
-            perror("ft_printf_ln");
-        }
-        
+        int error=ft_printf_ln(table,"%d|%c|%ld|%d|%c|%ld", index, *(char*)(buffer+index),*(datetimes+index),index+1, *(char*)(buffer+index+1),*(datetimes+index+1));
+       
     }
     
 

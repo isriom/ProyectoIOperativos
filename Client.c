@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
     const char *file_path = argv[1];
     const char *mode = argv[2];
-    if (strcmp(mode,"Automatic"))
+    if (strcmp(mode,"Automatic")==0)
     {
         if (argc==4)
         {
@@ -67,20 +67,21 @@ int main(int argc, char *argv[]) {
     Data_fd=open(file_path,O_RDONLY);
     if (Data_fd==-1)
     {
-        perror("fstat");
+        perror("open");
         close(Data_fd);
     }
     
     
-    struct descriptor *memory_desc=shared_memory_ptr;
-    int shared_memory_length=memory_desc->buffer_size;
-    time_t *datetimes=shared_memory_ptr+descriptor_size+statistics_size;
-    void *buffer=datetimes+shared_memory_length*sizeof(time_t);
+    memory_desc=shared_memory_ptr;
+    shared_memory_length=memory_desc->buffer_size;
+    datetimes=shared_memory_ptr+descriptor_size+statistics_size;
+    buffer=shared_memory_ptr+shared_memory_length*sizeof(time_t)+descriptor_size+statistics_size;
     
-    void *data=malloc(memory_desc->data_size);//Reserve space for memory
+    data=malloc(memory_desc->data_size);//Reserve space for memory
 
-    UI(argc,argv);
-    if (strcmp(mode,"Automatic"))
+    //UI(argc,argv);
+    printf("out GUI");
+    if (strcmp(mode,"Automatic")==0)
     {
         while (memory_desc->data_size>0)
         {
@@ -135,7 +136,8 @@ void ReadWrite(){
         memmove(buffer_write_pos,data,memory_desc->data_size);
         *date_write_pos=time_to_save;
         sem_post(&(memory_desc->buffer_reader_semaphore));
-        updateGTKBuffer();
+        //updateGTKBuffer();
+        printf("data: %c \n",*((char*)data));
         sleep(interval);
     
 }
