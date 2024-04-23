@@ -24,6 +24,9 @@ void *shared_memory_ptr;
 
 struct stat stat_buffer;
 const char *filepath;
+
+clock_t begin;
+
 int main(int argc, char *argv[]) {
     
     if(argc < 3){
@@ -33,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     filepath = argv[1];
     const char *mode = argv[2];
-    if (strcmp(mode,"Automatic"))
+    if (strcmp(mode,"Automatic")==0)
     {
         if (argc==4)
         {
@@ -106,13 +109,11 @@ int main(int argc, char *argv[]) {
     
     if (strcmp(mode,"Automatic")==0)
     {
-        clock_t begin = clock();
+        begin = clock();
         while (memory_desc->data_size>0)
         {
-            if (((double)(clock() - begin) / CLOCKS_PER_SEC)>=interval){
-                dequeue();
-                begin = clock();
-            }
+            
+            dequeue();
         }
         
     }
@@ -121,38 +122,44 @@ int main(int argc, char *argv[]) {
 }
 
 void dequeue(){
-    
-    //get index to read from buffer
-    sem_wait(&(memory_desc->reader_semaphore));
-    int offset = memory_desc->reader_pointer;
-    memory_desc->reader_pointer += memory_desc->data_size;
-    sem_post(&(memory_desc->reader_semaphore));
-    
-    //index in circular buffer
-    offset=offset%(memory_desc->buffer_size*memory_desc->data_size);
-    void* buffer_read_pos=offset+buffer;
-    time_t* date_read_pos=offset+datetimes;
-    
-    //down reader semaphore
-    sem_wait(&(memory_desc->buffer_reader_semaphore));
-    
+    clock_t new = clock();
+    double enlapsed_time = (double)(new - begin) / CLOCKS_PER_SEC;
+    printf("%f\n",enlapsed_time);
+    if(enlapsed_time>=interval){
+        //get index to read from buffer
+        sem_wait(&(memory_desc->reader_semaphore));
+        int offset = memory_desc->reader_pointer;
+        memory_desc->reader_pointer += memory_desc->data_size;
+        sem_post(&(memory_desc->reader_semaphore));
+        
+        //index in circular buffer
+        offset=offset%(memory_desc->buffer_size*memory_desc->data_size);
+        void* buffer_read_pos=offset+buffer;
+        time_t* date_read_pos=offset+datetimes;
+        
+        //down reader semaphore
+        sem_wait(&(memory_desc->buffer_reader_semaphore));
+        
 
-    char cur_char;
-    time_t date_time;
-    //read char and copy it in file
-    Data_fd = fopen(filepath, "a");
-    memcpy(&cur_char,buffer_read_pos,memory_desc->data_size);
-    fprintf(Data_fd, "%c",cur_char);
-    fclose(Data_fd);
-    memcpy(&date_time, date_read_pos,sizeof(time_t));
+        char cur_char;
+        time_t date_time;
+        //read char and copy it in file
+        Data_fd = fopen(filepath, "a");
+        memcpy(&cur_char,buffer_read_pos,memory_desc->data_size);
+        fprintf(Data_fd, "%c",cur_char);
+        fclose(Data_fd);
+        memcpy(&date_time, date_read_pos,sizeof(time_t));
 
-    //update UI
-    update_cur_char(cur_char);
-    update_date_time(date_time);
+        //update UI
+        update_cur_char(cur_char);
+        update_date_time(date_time);
 
-    //update_text_view_with_file();
-    //up writer semaphore
-    sem_post(&(memory_desc->buffer_writer_semaphore));
+        //update_text_view_with_file();
+        //up writer semaphore
+        sem_post(&(memory_desc->buffer_writer_semaphore));                                                                                                      
+        begin = clock();
+    }
+    
 
 }
 void update_date_time(long date_time){

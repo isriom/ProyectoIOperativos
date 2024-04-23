@@ -1,8 +1,0 @@
-${GTK_LIBRARY_DIRS})
-
-# Build Creator
-add_executable(Creator Creator.c)
-target_link_librariectories(${GTK_LIBRARY_DIRS})
-
-# Build Creator
-add_executa
