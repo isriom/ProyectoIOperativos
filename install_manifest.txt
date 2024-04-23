@@ -1,0 +1,8 @@
+/usr/local/lib/libfort.a
+/usr/local/include/fort.h
+/usr/local/include/fort.hpp
+/usr/local/lib/pkgconfig/libfort.pc
+/usr/local/lib/cmake/libfort/libfort-config.cmake
+/usr/local/lib/cmake/libfort/libfort-config-version.cmake
+/usr/local/lib/cmake/libfort/libfort-targets.cmake
+/usr/local/lib/cmake/libfort/libfort-targets-noconfig.cmake

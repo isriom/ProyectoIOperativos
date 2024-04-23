@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/Creator.dir/Creator.c.o -o Creator  Libs/libFort/libfort-0.4.2/lib/libfort.a 
