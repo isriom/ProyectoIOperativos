@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Interval not defined, 1 sec set as default");
         }       
     }else{
-        interval=1;
+        interval=0;
     }
     
 
@@ -124,7 +124,6 @@ int main(int argc, char *argv[]) {
 void dequeue(){
     clock_t new = clock();
     double enlapsed_time = (double)(new - begin) / CLOCKS_PER_SEC;
-    printf("%f\n",enlapsed_time);
     if(enlapsed_time>=interval){
         //get index to read from buffer
         sem_wait(&(memory_desc->reader_semaphore));
@@ -257,7 +256,11 @@ void *UI(void *arguments){
     gtk_widget_show_all(window);
 
     setup_file_monitor(buffer_ui, filepath);
-
+    //add manual write
+    if (!interval)
+    {
+        g_signal_connect(window, "key-press-event", G_CALLBACK(check_enter), NULL);
+    }
     // Start the GTK main loop
     gtk_main();
 }
@@ -286,5 +289,17 @@ static void on_file_changed(GFileMonitor *monitor, GFile *file, GFile *other_fil
     if (g_file_load_contents(file, NULL, &contents, &length, NULL, NULL)) {
         gtk_text_buffer_insert(buffer, &start, contents, length);
         g_free(contents);
+    }
+}
+
+void check_enter(GtkWidget *widget, GdkEventKey *event, gpointer user_data){
+    switch (event->keyval)
+    {
+    case GDK_KEY_Return:
+        dequeue();
+        break;
+    
+    default:
+        break;
     }
 }
