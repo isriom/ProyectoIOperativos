@@ -56,3 +56,5 @@ dkms.conf
 
 # Cmake
 build/
+make/
+CmakeFiles/

@@ -9,7 +9,7 @@ GtkWidget *text_view;
 GtkTextBuffer *buffer_ui;
 
 struct descriptor *memory_desc;
-int shared_memory_lenght;
+int shared_memory_length;
 time_t *datetimes;
 void *buffer;
 
@@ -33,42 +33,23 @@ int main(int argc, char *argv[]) {
 
     filepath = argv[1];
     const char *mode = argv[2];
-
     if (strcmp(mode,"Automatic"))
     {
         if (argc==4)
         {
         interval = atoi( argv[3]);
+
+        printf(argv[3]);
         }else{
         fprintf(stderr, "Interval not defined, 1 sec set as default");
         }       
     }else{
-        interval=0;
+        interval=1;
     }
     
-    
-    //UI STUFF
-    struct ui_arguments *args = malloc(sizeof(struct ui_arguments));
-    time_t t = time(NULL);
-    args->date_time = t;
-    char curr = 's';
-    args->curr_char = curr;
-    args->argc = argc;
-
-    pthread_t ui_thread;
-
-    //creating ui thread
-    if (pthread_create(&ui_thread, NULL, UI, args) != 0){
-        printf("nope\n");
-        return -1;
-    }
-    
-    pthread_join(ui_thread, NULL);
-    return 0;
 
     restart:
-
-    //open shared memory object
+    // Open the shared memory object
     shared_memory_fd = shm_open(shared_memory_name, O_RDWR,  S_IRWXO|S_IRUSR | S_IWUSR | S_IXUSR);
     if (shared_memory_fd == -1) {
         perror("shm_open");//try again in 10 seconds
@@ -91,7 +72,7 @@ int main(int argc, char *argv[]) {
         close(shared_memory_fd);
         return 1;
     }
-
+    
     //open file in append mode
     Data_fd = fopen(filepath, "a");
     if (Data_fd==NULL)
@@ -100,24 +81,47 @@ int main(int argc, char *argv[]) {
         fclose(Data_fd);
     }
 
-    struct descriptor *memory_desc=shared_memory_ptr;
-    int shared_memory_length=memory_desc->buffer_size;
-    time_t *datetimes=shared_memory_ptr+descriptor_size+statistics_size;
-    void *buffer=datetimes+shared_memory_length*sizeof(time_t);
+    memory_desc=shared_memory_ptr;
+    shared_memory_length=memory_desc->buffer_size;
+    datetimes=shared_memory_ptr+descriptor_size+statistics_size;
+    buffer=shared_memory_ptr+shared_memory_length*sizeof(time_t)+descriptor_size+statistics_size;
     
-    void *data=malloc(memory_desc->data_size);//Reserve space for memory
+    data=malloc(memory_desc->data_size);//Reserve space for memory
 
-    if (strcmp(mode,"Automatic"))
+    //UI STUFF
+    struct ui_arguments *args = malloc(sizeof(struct ui_arguments));
+    time_t t = time(NULL);
+    args->date_time = t;
+    char curr = 's';
+    args->curr_char = curr;
+    args->argc = argc;
+
+    pthread_t ui_thread;
+
+    //creating ui thread
+    if (pthread_create(&ui_thread, NULL, UI, args) != 0){
+        printf("nope\n");
+        return -1;
+    }
+    
+    if (strcmp(mode,"Automatic")==0)
     {
+        clock_t begin = clock();
         while (memory_desc->data_size>0)
         {
-            dequeue();
+            if (((double)(clock() - begin) / CLOCKS_PER_SEC)>=interval){
+                dequeue();
+                begin = clock();
+            }
         }
         
     }
+    pthread_join(ui_thread, NULL);
+    return 0;
 }
 
 void dequeue(){
+    
     //get index to read from buffer
     sem_wait(&(memory_desc->reader_semaphore));
     int offset = memory_desc->reader_pointer;
@@ -125,33 +129,30 @@ void dequeue(){
     sem_post(&(memory_desc->reader_semaphore));
     
     //index in circular buffer
-    offset = offset%(memory_desc->buffer_size*memory_desc->data_size);
-    void* buffer_read_pos = offset + buffer;
-    time_t* date_read_pos = offset +  datetimes;
-
+    offset=offset%(memory_desc->buffer_size*memory_desc->data_size);
+    void* buffer_read_pos=offset+buffer;
+    time_t* date_read_pos=offset+datetimes;
+    
     //down reader semaphore
     sem_wait(&(memory_desc->buffer_reader_semaphore));
+    
+
     char cur_char;
     time_t date_time;
     //read char and copy it in file
+    Data_fd = fopen(filepath, "a");
     memcpy(&cur_char,buffer_read_pos,memory_desc->data_size);
     fprintf(Data_fd, "%c",cur_char);
     fclose(Data_fd);
-    Data_fd = fopen(filepath, "a");
     memcpy(&date_time, date_read_pos,sizeof(time_t));
 
     //update UI
     update_cur_char(cur_char);
     update_date_time(date_time);
 
-    char* file_contents = read_file(filepath);
-    if (file_contents != NULL) {
-        update_text_view(file_contents);
-        g_free(file_contents);
-    }
+    //update_text_view_with_file();
     //up writer semaphore
     sem_post(&(memory_desc->buffer_writer_semaphore));
-    
 
 }
 void update_date_time(long date_time){
@@ -173,9 +174,33 @@ void update_cur_char(char curr_char){
 }
 
 void update_text_view(char *text){
-    
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
     gtk_text_buffer_set_text(buffer_ui, text, -1);
 }
+
+void update_text_view_with_file() {
+    FILE * f = fopen(filepath ,"r");
+    char* file_contents;
+    long length;
+    if (f){
+        fseek(f,0,SEEK_END);
+        length = ftell(f);
+        fseek(f,0,SEEK_SET);
+        file_contents = malloc(length+1);
+        if (file_contents){
+            file_contents[length] = '\0';
+            fread(file_contents,1,length,f);
+            gboolean is_valid = g_utf8_validate(file_contents, -1, NULL);
+            if (is_valid) {
+                gtk_text_buffer_set_text(buffer_ui, file_contents, -1);
+            }
+            free(file_contents);
+        }
+        fclose(f);
+        
+    }
+}
+
 void *UI(void *arguments){
     // Initialize GTK
 
@@ -195,13 +220,11 @@ void *UI(void *arguments){
     
     // Create the first label
     label_cur_char = gtk_label_new("");
-    update_cur_char(args->curr_char);
     gtk_box_pack_start(GTK_BOX(vbox), label_cur_char, FALSE, FALSE, 0);
 
     
     // Create the second label
     label_date_time = gtk_label_new("");
-    update_date_time(args->date_time);
     gtk_box_pack_start(GTK_BOX(vbox), label_date_time, FALSE, FALSE, 0);
     
     // Create a scrolled window to contain the text area
@@ -213,17 +236,11 @@ void *UI(void *arguments){
     // Create the text buffer and set initial text
     buffer_ui = gtk_text_buffer_new(NULL);
 
-    // Create a 300-character string
-    char myString[301]; // 300 characters + null terminator
-    for (int i = 0; i < 300; ++i) {
-        myString[i] = 'A' + i % 26; // Filling with letters from A to Z in a circular manner
-    }
-    myString[300] = '\0'; // Null terminator
+    
 
-    update_text_view(myString);
+    
     // Create the text view and set the buffer
     text_view = gtk_text_view_new_with_buffer(buffer_ui);
-    
     // Set text view as not editable
     gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
     
@@ -231,32 +248,36 @@ void *UI(void *arguments){
     
     // Show all widgets
     gtk_widget_show_all(window);
-    
+
+    setup_file_monitor(buffer_ui, filepath);
+
     // Start the GTK main loop
     gtk_main();
 }
 
-char* read_file(const char* filename) {
-    FILE* file = fopen(filename, "r");
-    if (!file) {
-        g_print("Error opening file!\n");
-        return NULL;
+static void setup_file_monitor(GtkTextBuffer *buffer, const gchar *file_path) {
+    GFile *file = g_file_new_for_path(file_path);
+    GFileMonitor *monitor = g_file_monitor_file(file, G_FILE_MONITOR_NONE, NULL, NULL);
+
+    g_signal_connect(monitor, "changed", G_CALLBACK(on_file_changed), buffer);
+    g_object_unref(file);
+}
+
+static void on_file_changed(GFileMonitor *monitor, GFile *file, GFile *other_file,
+                             GFileMonitorEvent event_type, gpointer user_data) {
+    GtkTextBuffer *buffer = GTK_TEXT_BUFFER(user_data);
+    GtkTextIter start, end;
+    gtk_text_buffer_get_start_iter(buffer, &start);
+    gtk_text_buffer_get_end_iter(buffer, &end);
+
+    // Clear existing buffer
+    gtk_text_buffer_delete(buffer, &start, &end);
+
+    // Read the file and update buffer
+    gchar *contents;
+    gsize length;
+    if (g_file_load_contents(file, NULL, &contents, &length, NULL, NULL)) {
+        gtk_text_buffer_insert(buffer, &start, contents, length);
+        g_free(contents);
     }
-
-    fseek(file, 0, SEEK_END);
-    long length = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    char* buffer = malloc(length + 1);
-    if (!buffer) {
-        fclose(file);
-        g_print("Memory error!\n");
-        return NULL;
-    }
-
-    fread(buffer, 1, length, file);
-    buffer[length] = '\0';
-    fclose(file);
-
-    return buffer;
 }
