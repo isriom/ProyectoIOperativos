@@ -92,12 +92,16 @@ int main(int argc, char *argv[]) {
     ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
 
 
-    ft_write_ln(table, "N", "Data", "Time","N", "Data", "Time" );
+    ft_write_ln(table, "N", "Data", "Time","N", "Data", "Time","N", "Data", "Time","N", "Data", "Time" );
 
-    for (int i = 0; i < shared_memory_length/2; i++)
+    for (int i = 0; i < shared_memory_length/4; i++)
     {
-        int index=i*2;
-        int error=ft_printf_ln(table,"%d|%c|%ld|%d|%c|%ld", index, *(char*)(buffer+index),*(datetimes+index),index+1, *(char*)(buffer+index+1),*(datetimes+index+1));
+        int index=i*4;
+        int error=ft_printf_ln(table,"%d|%c|%ld|%d|%c|%ld|%d|%c|%ld|%d|%c|%ld|"
+                                , index, *(char*)(buffer+index),*(datetimes+index)
+                                ,index+1, *(char*)(buffer+index+1),*(datetimes+index+1)
+                                ,index+2, *(char*)(buffer+index+2),*(datetimes+index+2)
+                                ,index+3, *(char*)(buffer+index+3),*(datetimes+index+3));
        
     }
     

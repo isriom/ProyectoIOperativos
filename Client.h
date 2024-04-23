@@ -16,8 +16,8 @@
 
 int main(int argc, char *argv[]);
 
-void updateGTKBuffer();
-
+int updateGTKBuffer();
+void *write_loop();
 void ReadWrite();
 
 int UI(int argc, char *argv[]);
