@@ -64,6 +64,8 @@ int main(int argc, char *argv[]) {
     memory_desc->buffer_size=shared_memory_length;
     memory_desc->reader_pointer=0;
     memory_desc->writer_pointer=0;
+    memory_desc->reconstructor_done=0;
+    memory_desc->client_done=0;
     sem_init(&(memory_desc->reader_semaphore),1,1);
     sem_init(&(memory_desc->writer_semaphore),1,1);
     sem_init(&(memory_desc->buffer_reader_semaphore),1,0);
