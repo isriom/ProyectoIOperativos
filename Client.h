@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <gtk/gtk.h>
-
+#include <sys/time.h>
 #include "Constants.h"
 
 

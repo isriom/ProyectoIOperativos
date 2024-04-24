@@ -25,7 +25,6 @@ void update_cur_char(char curr_char);
 void update_text_view(char *text);
 void *UI(void *arguments);
 void dequeue();
-void update_text_view_with_file();
 static void on_file_changed(GFileMonitor *monitor, GFile *file, GFile *other_file,
                              GFileMonitorEvent event_type, gpointer user_data);
 static void setup_file_monitor(GtkTextBuffer *buffer, const gchar *file_path);

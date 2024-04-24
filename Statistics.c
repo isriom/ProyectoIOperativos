@@ -50,13 +50,13 @@ int main(){
 
     int memory_used = (local_statistics.transfered_characters_n+buffer_unread)*sizeof(char);
 
-    printf("Tiempo bloqueado del cliente:                   %f\n",local_statistics.client_slp_t);
-    printf("Tiempo bloqueado del reconstructor:             %f\n",local_statistics.reconstructor_slp_t);
+    printf("Tiempo bloqueado del cliente:                   %f s\n",local_statistics.client_slp_t);
+    printf("Tiempo bloqueado del reconstructor:             %f s\n",local_statistics.reconstructor_slp_t);
     printf("Caracteres transferidos:                        %d\n",local_statistics.transfered_characters_n);
     printf("Caracteres en buffer:                           %d\n",local_statistics.characters_in_buffer_n);
-    printf("Espacio total de memoria utilizado              %d\n",memory_used);
-    printf("Tiempo total en modo usuario del cliente:       %f\n",local_statistics.client_usr_mode_t);
-    printf("Tiempo total en modo kernel del cliente:        %f\n",local_statistics.client_krnl_mode_t);
-    printf("Tiempo total en modo usuario del reconstructor: %f\n",local_statistics.reconstructor_usr_mode_t);
-    printf("Tiempo total en modo kernel del reconstructor:  %f\n",local_statistics.reconstructor_krnl_mode_t);
+    printf("Espacio total de memoria utilizado              %d bytes\n",memory_used);
+    printf("Tiempo total en modo usuario del cliente:       %f s\n",local_statistics.client_usr_mode_t);
+    printf("Tiempo total en modo kernel del cliente:        %f s\n",local_statistics.client_krnl_mode_t);
+    printf("Tiempo total en modo usuario del reconstructor: %f s\n",local_statistics.reconstructor_usr_mode_t);
+    printf("Tiempo total en modo kernel del reconstructor:  %f s\n",local_statistics.reconstructor_krnl_mode_t);
 }
