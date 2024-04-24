@@ -12,15 +12,15 @@
 #include <signal.h>
 
 #include "Constants.h"
+#include "Creator.h"
 #include "Libs/libFort/libfort-0.4.2/lib/fort.h"
 
-#define _POSIX_C_SOURCE >= 199309L
-
+#define __USE_POSIX 1
 int execute=1;
 void End(){
     if(execute){
         execute=0;
-        return NULL;
+        return;
     }
     shm_unlink(shared_memory_name);
     exit(3);
@@ -33,9 +33,9 @@ int main(int argc, char *argv[]) {
     int data_size;
     void *shared_memory_ptr;
 
-    struct sigaction act;
-    act.sa_handler=End;
-    sigaction(SIGINT,act);
+    struct sigaction act={0};
+    act.sa_handler=&End;
+    sigaction(SIGINT,&act, NULL);
     
     
     shm_unlink(shared_memory_name);//Restart memory section
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
     openStatistics();
     printf("Closing in 10 seconds\n");
     sleep(10);
-    return NULL;
+    return 0;
     
 }
 
