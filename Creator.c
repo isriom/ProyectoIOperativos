@@ -16,15 +16,15 @@
 
 #define _POSIX_C_SOURCE >= 199309L
 
+int execute=1;
 void End(){
     if(execute){
         execute=0;
-        return
+        return NULL;
     }
     shm_unlink(shared_memory_name);
     exit(3);
 }
-int execute=1;
 int reader_semaphore_value;
 
 int main(int argc, char *argv[]) {
@@ -32,7 +32,12 @@ int main(int argc, char *argv[]) {
     int shared_memory_fd;
     int data_size;
     void *shared_memory_ptr;
-    sigaction()
+
+    struct sigaction act;
+    act.sa_handler=End;
+    sigaction(SIGINT,act);
+    
+    
     shm_unlink(shared_memory_name);//Restart memory section
 
     if (argc != 3) {
@@ -147,9 +152,9 @@ int main(int argc, char *argv[]) {
     memory_desc->reconstructor_done = 1;
     memory_desc->client_done = 1;
     openStatistics();
-    printf("Closing in 10 seconds\n")
+    printf("Closing in 10 seconds\n");
     sleep(10);
-    return;
+    return NULL;
     
 }
 

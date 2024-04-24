@@ -25,7 +25,7 @@ include_directories(${GTK_INCLUDE_DIRS})
 link_directories(${GTK_LIBRARY_DIRS})
 
 # Build Creator
-add_executable(Creator Creator.c)
+add_executable(Creator Creator.c )
 target_link_libraries(Creator PRIVATE fort)
 target_link_libraries(Creator ${CMAKE_THREAD_LIBS_INIT})
 
