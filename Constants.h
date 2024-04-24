@@ -9,6 +9,8 @@ struct descriptor{
     int buffer_size; //In decimal
     long reader_pointer;
     long writer_pointer;
+    int client_done;
+    int reconstructor_done;
     sem_t reader_semaphore;
     sem_t writer_semaphore;
     sem_t buffer_reader_semaphore;

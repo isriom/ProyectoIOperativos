@@ -64,6 +64,8 @@ int main(int argc, char *argv[]) {
     memory_desc->buffer_size=shared_memory_length;
     memory_desc->reader_pointer=0;
     memory_desc->writer_pointer=0;
+    memory_desc->reconstructor_done=0;
+    memory_desc->client_done=0;
     sem_init(&(memory_desc->reader_semaphore),1,1);
     sem_init(&(memory_desc->writer_semaphore),1,1);
     sem_init(&(memory_desc->buffer_reader_semaphore),1,0);
@@ -78,6 +80,10 @@ int main(int argc, char *argv[]) {
     stadistics->client_krnl_mode_t=0;
     stadistics->transfered_characters_n=0;
     stadistics->characters_in_buffer_n=0;
+    sem_init(&(stadistics->client_slp_t_semaphore),1,1);
+    sem_init(&(stadistics->client_usr_krn_t_semaphore),1,1);
+    sem_init(&(stadistics->reconstructor_slp_t_semaphore),1,1);
+    sem_init(&(stadistics->reconstructor_usr_krn_t_semaphore),1,1);
 
     time_t *datetimes=shared_memory_ptr+descriptor_size+statistics_size;
     void *buffer=shared_memory_ptr+descriptor_size+statistics_size+shared_memory_length*sizeof(time_t);

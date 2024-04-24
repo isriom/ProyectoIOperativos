@@ -2,7 +2,6 @@
 #include "Constants.h"
 
 //UI elements definitin
-
 GtkWidget *label_cur_char;
 GtkWidget *label_date_time;
 GtkWidget *text_view;

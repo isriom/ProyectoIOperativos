@@ -14,14 +14,29 @@ int shared_memory_fd;
 int Data_fd;
 void *shared_memory_ptr;
 struct stat stat_buffer;
+struct stat stat_file;
 GtkTextBuffer *Gtkbuffer;
 char* file_Content=NULL;
 
 void ReadWrite(){
-
+        if (memory_desc->client_done)
+        {
+            return;
+        }
+        
         //Get position to read from file
         sem_wait(&(memory_desc->writer_semaphore));
         int offset=memory_desc->writer_pointer;
+
+        if (offset>=stat_file.st_size)
+        {
+            printf("%d,%ld",offset,stat_file.st_size);
+            sem_post(&(memory_desc->writer_semaphore));
+            memory_desc->client_done=1;
+            return;
+        }
+        
+
         memory_desc->writer_pointer+=memory_desc->data_size;
         sem_post(&(memory_desc->writer_semaphore));
 
@@ -30,6 +45,7 @@ void ReadWrite(){
         {
             perror("pread");
         }
+        
 
         //Get position in circular buffer
         offset=offset%(memory_desc->buffer_size*memory_desc->data_size);
@@ -47,10 +63,13 @@ void ReadWrite(){
 }
 
 void *write_loop(){
-        while (memory_desc->data_size>0)
+        while (!memory_desc->client_done)
         {
             ReadWrite();
+            printf("%d,%ld",0,stat_file.st_size);
         }
+
+            printf("%d,%ld",1,stat_file.st_size);
         return NULL;
 }
 
@@ -167,10 +186,12 @@ int main(int argc, char *argv[]) {
 
     // Get information about the shared memory object
     if (fstat(shared_memory_fd, &stat_buffer) == -1) {
-        perror("fstat");
+        perror("fstat Mem");
         close(shared_memory_fd);
         return 1;
     }
+
+
 
     // Map the shared memory object into the address space
     shared_memory_ptr = mmap(NULL, stat_buffer.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, shared_memory_fd, 0);
@@ -188,7 +209,12 @@ int main(int argc, char *argv[]) {
         perror("open");
         close(Data_fd);
     }
-    
+        // Get information about the file object
+    if (fstat(Data_fd, &stat_file) == -1) {
+        perror("fstat Data");
+        close(Data_fd);
+        return 1;
+    }
     
     memory_desc=shared_memory_ptr;
     shared_memory_length=memory_desc->buffer_size;
