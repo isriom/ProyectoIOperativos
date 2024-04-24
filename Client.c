@@ -47,6 +47,18 @@ void ReadWrite(){
         
 
         memory_desc->writer_pointer+=memory_desc->data_size;
+
+        //update kernel and user times
+        statistics_desc->client_slp_t=statistics_desc->client_slp_t+sleep_t_pointer+sleep_t_read;
+        gettimeofday(&end_time, NULL);
+        end_clock = clock();
+        sys_time = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1000000.0;
+        user_time = (double)(end_clock - start_clock) / CLOCKS_PER_SEC;
+
+        statistics_desc->client_krnl_mode_t = statistics_desc->client_krnl_mode_t + sys_time;
+        statistics_desc->client_usr_mode_t = statistics_desc->client_usr_mode_t + user_time;
+        gettimeofday(&start_time,NULL);
+        start_clock = clock();
         sem_post(&(memory_desc->writer_semaphore));
 
         int error=pread(Data_fd,data,memory_desc->data_size, offset);//Read from file and save on data;
@@ -62,24 +74,16 @@ void ReadWrite(){
         time_t* date_write_pos=offset+datetimes;
         time_t time_to_save = time(NULL);
         start_slp_time = clock(); //timing stats
+        
         sem_wait(&(memory_desc->buffer_writer_semaphore));
         //timing stats
         end_slp_time = clock();
         sleep_t_pointer = (double)(end_slp_time-start_slp_time) / CLOCKS_PER_SEC;
-        statistics_desc->client_slp_t=statistics_desc->client_slp_t+sleep_t_pointer+sleep_t_read;
+        
         memmove(buffer_write_pos,data,memory_desc->data_size);
         *date_write_pos=time_to_save;
-
-        //update kernel and user times
-        gettimeofday(&end_time, NULL);
-        end_clock = clock();
-        sys_time = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1000000.0;
-        user_time = (double)(end_clock - start_clock) / CLOCKS_PER_SEC;
-
-        statistics_desc->client_krnl_mode_t = statistics_desc->client_krnl_mode_t + sys_time;
-        statistics_desc->client_usr_mode_t = statistics_desc->client_usr_mode_t + user_time;
-        gettimeofday(&start_time,NULL);
-        start_clock = clock();
+        
+        
 
         sem_post(&(memory_desc->buffer_reader_semaphore));
         printf("data: %c \n",*((char*)data));

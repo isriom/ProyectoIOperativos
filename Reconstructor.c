@@ -30,9 +30,13 @@ double sys_time, user_time, sleep_t_pointer, sleep_t_read;
 
 
 int main(int argc, char *argv[]) {
-    
+    sys_time = 0.0;
+    user_time =0.0;
+    sleep_t_pointer = 0.0;
+    sleep_t_read = 0.0;
     start_clock = clock();
     gettimeofday(&start_time,NULL);
+
     if(argc < 3){
         fprintf(stderr, "Usage: %s <File> <Mode> [interval]\n Mode = Automatic|Manual\n", argv[0]);
         return 1;
@@ -113,13 +117,18 @@ int main(int argc, char *argv[]) {
     if (strcmp(mode,"Automatic")==0)
     {
         begin = clock();
-        while (memory_desc->data_size>0)
+        while (!memory_desc->reconstructor_done)
         {
             
             dequeue();
         }
         
+        
     }
+    while(memory_desc->reconstructor_done == 0){}
+    
+    gtk_main_quit();
+    
     pthread_join(ui_thread, NULL);
     return 0;
 }
@@ -139,7 +148,19 @@ void dequeue(){
 
         int offset = memory_desc->reader_pointer;
         memory_desc->reader_pointer += memory_desc->data_size;
+
         statistics_desc->transfered_characters_n = statistics_desc->transfered_characters_n+1;
+        statistics_desc->reconstructor_slp_t=statistics_desc->reconstructor_slp_t+sleep_t_pointer+sleep_t_read;
+        //update kernel and user times
+        gettimeofday(&end_time, NULL);
+        end_clock = clock();
+        sys_time = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1000000.0;
+        user_time = (double)(end_clock - start_clock) / CLOCKS_PER_SEC;
+
+        statistics_desc->reconstructor_krnl_mode_t = statistics_desc->reconstructor_krnl_mode_t + sys_time;
+        statistics_desc->reconstructor_usr_mode_t = statistics_desc->reconstructor_usr_mode_t + user_time;
+        gettimeofday(&start_time,NULL);
+        start_clock = clock();
         sem_post(&(memory_desc->reader_semaphore));
         
         //index in circular buffer
@@ -153,17 +174,7 @@ void dequeue(){
         //timing stats
         end_slp_time = clock();
         sleep_t_pointer = (double)(end_slp_time-start_slp_time) / CLOCKS_PER_SEC;
-        statistics_desc->reconstructor_slp_t=statistics_desc->reconstructor_slp_t+sleep_t_pointer+sleep_t_read;
-        //update kernel and user times
-        gettimeofday(&end_time, NULL);
-        end_clock = clock();
-        sys_time = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1000000.0;
-        user_time = (double)(end_clock - start_clock) / CLOCKS_PER_SEC;
-
-        statistics_desc->reconstructor_krnl_mode_t = statistics_desc->reconstructor_krnl_mode_t + sys_time;
-        statistics_desc->reconstructor_usr_mode_t = statistics_desc->reconstructor_usr_mode_t + user_time;
-        gettimeofday(&start_time,NULL);
-        start_clock = clock();
+        
         
         //variables for char and time_stamp
         char cur_char;
@@ -178,10 +189,16 @@ void dequeue(){
         //update UI
         update_cur_char(cur_char);
         update_date_time(date_time);
-
+        
         //up writer semaphore
-        sem_post(&(memory_desc->buffer_writer_semaphore));                                                                                                      
+        sem_post(&(memory_desc->buffer_writer_semaphore));       
+
+        //check eof
+        if(cur_char == EOF){
+            memory_desc->reconstructor_done = 1;
+        }                                                                             
         begin = clock();
+        
     }
     
 

@@ -12,7 +12,7 @@
 
 #include "Constants.h"
 #include "Libs/libFort/libfort-0.4.2/lib/fort.h"
-
+int reader_semaphore_value;
 int main(int argc, char *argv[]) {
     int shared_memory_length;
     int shared_memory_fd;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     
     while (memory_desc->data_size>0)
     {
-
+    
     write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 12);
 
     ft_table_t *table = ft_create_table();
@@ -115,7 +115,29 @@ int main(int argc, char *argv[]) {
 
     printf("%s\n", ft_to_string(table));
     ft_destroy_table(table);
+    
+    sem_getvalue(&(memory_desc->buffer_reader_semaphore), &reader_semaphore_value);
+    if (memory_desc->client_done==1 & reader_semaphore_value<=0){
+        memory_desc->reconstructor_done = 1;
+    }
+    if(memory_desc->reconstructor_done==1 & memory_desc->client_done==1){
+            openStatistics();
+            return 0;
+    }
     sleep(1);
+        
     }
     
+}
+
+void openStatistics() {
+    const char *command = "./Statistics"; 
+    
+    int status = system(command);
+
+    if (status == -1) {
+        perror("Error opening Statistics");
+    } else {
+        printf("Statistics program opened\n");
+    }
 }

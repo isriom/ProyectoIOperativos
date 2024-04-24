@@ -1,3 +1,4 @@
+#include <gtk/gtk.h>
 #include "Statistics.h"
 #include "Constants.h"
 
@@ -6,23 +7,27 @@ struct statistics *statistics_desc;
 void *shared_memory_ptr;
 struct stat stat_buffer;
 
-int main(){
+GtkWidget *main_window;
+GtkWidget *output_label;
+
+void update_output_label() {
     int shared_memory_fd;
-    restart:
+    
     // Open the shared memory object
     shared_memory_fd = shm_open(shared_memory_name, O_RDWR,  S_IRWXO|S_IRUSR | S_IWUSR | S_IXUSR);
     if (shared_memory_fd == -1) {
         perror("shm_open");//try again in 10 seconds
         fprintf(stdout,"Memory Space not found, trying again in 10s"); 
         sleep(10);
-        goto restart;
+        update_output_label(); // Recursive call to retry
+        return;
     }
 
     // Get information about the shared memory object
     if (fstat(shared_memory_fd, &stat_buffer) == -1) {
         perror("fstat");
         close(shared_memory_fd);
-        return 1;
+        return;
     }
 
     // Map the shared memory object into the address space
@@ -30,7 +35,7 @@ int main(){
     if (shared_memory_ptr == MAP_FAILED) {
         perror("mmap");
         close(shared_memory_fd);
-        return 1;
+        return;
     }
 
     int buffer_unread;
@@ -50,13 +55,52 @@ int main(){
 
     int memory_used = (local_statistics.transfered_characters_n+buffer_unread)*sizeof(char);
 
-    printf("Tiempo bloqueado del cliente:                   %f s\n",local_statistics.client_slp_t);
-    printf("Tiempo bloqueado del reconstructor:             %f s\n",local_statistics.reconstructor_slp_t);
-    printf("Caracteres transferidos:                        %d\n",local_statistics.transfered_characters_n);
-    printf("Caracteres en buffer:                           %d\n",local_statistics.characters_in_buffer_n);
-    printf("Espacio total de memoria utilizado              %d bytes\n",memory_used);
-    printf("Tiempo total en modo usuario del cliente:       %f s\n",local_statistics.client_usr_mode_t);
-    printf("Tiempo total en modo kernel del cliente:        %f s\n",local_statistics.client_krnl_mode_t);
-    printf("Tiempo total en modo usuario del reconstructor: %f s\n",local_statistics.reconstructor_usr_mode_t);
-    printf("Tiempo total en modo kernel del reconstructor:  %f s\n",local_statistics.reconstructor_krnl_mode_t);
+    char output_text[600]; // Adjust size as needed
+    snprintf(output_text, sizeof(output_text), "Tiempo bloqueado del cliente:                   %f s\n"
+                    "Tiempo bloqueado del reconstructor:             %f s\n"
+                    "Caracteres transferidos:                        %d\n"
+                    "Caracteres en buffer:                           %d\n"
+                    "Espacio total de memoria utilizado              %d bytes\n"
+                    "Tiempo total en modo usuario del cliente:       %f s\n"
+                    "Tiempo total en modo kernel del cliente:        %f s\n"
+                    "Tiempo total en modo usuario del reconstructor: %f s\n"
+                    "Tiempo total en modo kernel del reconstructor:  %f s\n",
+                    local_statistics.client_slp_t,
+                    local_statistics.reconstructor_slp_t,
+                    local_statistics.transfered_characters_n,
+                    local_statistics.characters_in_buffer_n,
+                    memory_used,
+                    local_statistics.client_usr_mode_t,
+                    local_statistics.client_krnl_mode_t,
+                    local_statistics.reconstructor_usr_mode_t,
+                    local_statistics.reconstructor_krnl_mode_t);
+
+
+    gtk_label_set_text(GTK_LABEL(output_label), output_text);
+}
+
+int main(int argc, char *argv[]) {
+    // Initialize GTK
+    gtk_init(&argc, &argv);
+
+    // Create the main window
+    main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(main_window), "Statistics Viewer");
+    g_signal_connect(main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    // Create a label to display the output
+    output_label = gtk_label_new(NULL);
+    gtk_label_set_line_wrap(GTK_LABEL(output_label), TRUE); // Enable text wrapping
+    gtk_container_add(GTK_CONTAINER(main_window), output_label);
+
+    // Update the label initially
+    update_output_label();
+
+    // Show all widgets
+    gtk_widget_show_all(main_window);
+
+    // Start the GTK main loop
+    gtk_main();
+
+    return 0;
 }
