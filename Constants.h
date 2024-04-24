@@ -24,6 +24,10 @@ struct statistics{
     double client_krnl_mode_t;
     long transfered_characters_n;
     long characters_in_buffer_n;
+    sem_t reconstructor_usr_krn_t_semaphore;
+    sem_t client_usr_krn_t_semaphore;
+    sem_t reconstructor_slp_t_semaphore;
+    sem_t client_slp_t_semaphore;
 };
 const int descriptor_size = sizeof(struct descriptor);
 const int semaphore_size = sizeof(sem_t);

@@ -9,6 +9,7 @@ GtkWidget *text_view;
 GtkTextBuffer *buffer_ui;
 
 struct descriptor *memory_desc;
+struct statistics *statistics_desc;
 int shared_memory_length;
 time_t *datetimes;
 void *buffer;
@@ -25,10 +26,13 @@ void *shared_memory_ptr;
 struct stat stat_buffer;
 const char *filepath;
 
-clock_t begin;
 
+clock_t begin,start_clock, end_clock;
+struct timeval start_time, end_time;
 int main(int argc, char *argv[]) {
     
+    start_clock = clock();
+    gettimeofday(&start_time,NULL);
     if(argc < 3){
         fprintf(stderr, "Usage: %s <File> <Mode> [interval]\n Mode = Automatic|Manual\n", argv[0]);
         return 1;
@@ -88,7 +92,7 @@ int main(int argc, char *argv[]) {
     shared_memory_length=memory_desc->buffer_size;
     datetimes=shared_memory_ptr+descriptor_size+statistics_size;
     buffer=shared_memory_ptr+shared_memory_length*sizeof(time_t)+descriptor_size+statistics_size;
-    
+    statistics_desc=shared_memory_ptr + descriptor_size;
     data=malloc(memory_desc->data_size);//Reserve space for memory
 
     //UI STUFF
@@ -124,7 +128,20 @@ int main(int argc, char *argv[]) {
 void dequeue(){
     clock_t new = clock();
     double enlapsed_time = (double)(new - begin) / CLOCKS_PER_SEC;
+    double sys_time, user_time;
+    
+    
+    gettimeofday(&end_time, NULL);
+    end_clock = clock();
+    sys_time = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1000000.0;
+    user_time = (double)(end_clock - start_clock) / CLOCKS_PER_SEC;
+
+    printf("Kernel mode time: %f\n", sys_time);
+    printf("User mode time: %f\n",user_time);
+    gettimeofday(&start_time,NULL);
+    start_clock = clock();
     if(enlapsed_time>=interval){
+       
         //get index to read from buffer
         sem_wait(&(memory_desc->reader_semaphore));
         int offset = memory_desc->reader_pointer;
