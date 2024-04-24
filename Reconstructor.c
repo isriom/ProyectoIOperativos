@@ -14,8 +14,6 @@ int shared_memory_length;
 time_t *datetimes;
 void *buffer;
 
-void *data;
-
 unsigned int interval = 1;
 
 int shared_memory_fd;
@@ -93,7 +91,6 @@ int main(int argc, char *argv[]) {
     datetimes=shared_memory_ptr+descriptor_size+statistics_size;
     buffer=shared_memory_ptr+shared_memory_length*sizeof(time_t)+descriptor_size+statistics_size;
     statistics_desc=shared_memory_ptr + descriptor_size;
-    data=malloc(memory_desc->data_size);//Reserve space for memory
 
     //UI STUFF
     struct ui_arguments *args = malloc(sizeof(struct ui_arguments));

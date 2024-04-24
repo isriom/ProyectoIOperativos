@@ -38,3 +38,9 @@ target_link_libraries(Client PRIVATE ${GTK_LIBRARIES})
 add_executable(Reconstructor Reconstructor.c)
 target_link_libraries(Reconstructor ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(Reconstructor PRIVATE ${GTK_LIBRARIES})
+
+# Build Statistics
+
+add_executable(Statistics Statistics.c)
+target_link_libraries(Statistics ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(Statistics PRIVATE ${GTK_LIBRARIES})
