@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
         
     
     memory_desc->reconstructor_done = 1;
-    memory_desc-> = 1;
+    memory_desc->client_done = 1;
     openStatistics();
     printf("Closing in 10 seconds\n")
     sleep(10);
