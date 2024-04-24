@@ -130,25 +130,22 @@ int main(int argc, char *argv[]) {
         printf("%s\n", ft_to_string(table));
         ft_destroy_table(table);
         sleep(1);
-    }
     
+        sem_getvalue(&(memory_desc->buffer_reader_semaphore), &reader_semaphore_value);
+        if (memory_desc->client_done==1 & reader_semaphore_value<=0){
+            memory_desc->reconstructor_done = 1;
+        }
+        if(memory_desc->reconstructor_done==1 & memory_desc->client_done==1){
+                openStatistics();
 
-
-    printf("%s\n", ft_to_string(table));
-    ft_destroy_table(table);
-    
-    sem_getvalue(&(memory_desc->buffer_reader_semaphore), &reader_semaphore_value);
-    if (memory_desc->client_done==1 & reader_semaphore_value<=0){
-        memory_desc->reconstructor_done = 1;
+                return 0;
+        }
+        sleep(1);
     }
-    if(memory_desc->reconstructor_done==1 & memory_desc->client_done==1){
-            openStatistics();
-
-            return 0;
-    }
-    sleep(1);
         
-    }
+    
+    memory_desc->reconstructor_done = 1;
+    memory_desc-> = 1;
     openStatistics();
     printf("Closing in 10 seconds\n")
     sleep(10);
