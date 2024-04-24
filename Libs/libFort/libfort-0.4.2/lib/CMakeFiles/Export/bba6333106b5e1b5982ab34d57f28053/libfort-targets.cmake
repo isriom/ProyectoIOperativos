@@ -59,7 +59,7 @@ endif()
 add_library(libfort::fort STATIC IMPORTED)
 
 set_target_properties(libfort::fort PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include;${_IMPORT_PREFIX}/include"
 )
 
 # Load information for each installed configuration.

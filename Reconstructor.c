@@ -13,8 +13,6 @@ int shared_memory_length;
 time_t *datetimes;
 void *buffer;
 
-void *data;
-
 unsigned int interval = 1;
 
 int shared_memory_fd;
@@ -26,12 +24,19 @@ struct stat stat_buffer;
 const char *filepath;
 
 
-clock_t begin,start_clock, end_clock;
+clock_t begin,start_clock, end_clock, start_slp_time, end_slp_time;
 struct timeval start_time, end_time;
+double sys_time, user_time, sleep_t_pointer, sleep_t_read;
+
+
 int main(int argc, char *argv[]) {
-    
+    sys_time = 0.0;
+    user_time =0.0;
+    sleep_t_pointer = 0.0;
+    sleep_t_read = 0.0;
     start_clock = clock();
     gettimeofday(&start_time,NULL);
+
     if(argc < 3){
         fprintf(stderr, "Usage: %s <File> <Mode> [interval]\n Mode = Automatic|Manual\n", argv[0]);
         return 1;
@@ -92,7 +97,6 @@ int main(int argc, char *argv[]) {
     datetimes=shared_memory_ptr+descriptor_size+statistics_size;
     buffer=shared_memory_ptr+shared_memory_length*sizeof(time_t)+descriptor_size+statistics_size;
     statistics_desc=shared_memory_ptr + descriptor_size;
-    data=malloc(memory_desc->data_size);//Reserve space for memory
 
     //UI STUFF
     struct ui_arguments *args = malloc(sizeof(struct ui_arguments));
@@ -113,13 +117,18 @@ int main(int argc, char *argv[]) {
     if (strcmp(mode,"Automatic")==0)
     {
         begin = clock();
-        while (memory_desc->data_size>0)
+        while (!memory_desc->reconstructor_done)
         {
             
             dequeue();
         }
         
+        
     }
+    while(memory_desc->reconstructor_done == 0){}
+    
+    gtk_main_quit();
+    
     pthread_join(ui_thread, NULL);
     return 0;
 }
@@ -127,24 +136,31 @@ int main(int argc, char *argv[]) {
 void dequeue(){
     clock_t new = clock();
     double enlapsed_time = (double)(new - begin) / CLOCKS_PER_SEC;
-    double sys_time, user_time;
     
-    
-    gettimeofday(&end_time, NULL);
-    end_clock = clock();
-    sys_time = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1000000.0;
-    user_time = (double)(end_clock - start_clock) / CLOCKS_PER_SEC;
-
-    printf("Kernel mode time: %f\n", sys_time);
-    printf("User mode time: %f\n",user_time);
-    gettimeofday(&start_time,NULL);
-    start_clock = clock();
     if(enlapsed_time>=interval){
        
         //get index to read from buffer
+        start_slp_time = clock(); //timing stats
         sem_wait(&(memory_desc->reader_semaphore));
+        //timing stats
+        end_slp_time = clock();
+        sleep_t_pointer = (double)(end_slp_time-start_slp_time) / CLOCKS_PER_SEC;
+
         int offset = memory_desc->reader_pointer;
         memory_desc->reader_pointer += memory_desc->data_size;
+
+        statistics_desc->transfered_characters_n = statistics_desc->transfered_characters_n+1;
+        statistics_desc->reconstructor_slp_t=statistics_desc->reconstructor_slp_t+sleep_t_pointer+sleep_t_read;
+        //update kernel and user times
+        gettimeofday(&end_time, NULL);
+        end_clock = clock();
+        sys_time = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1000000.0;
+        user_time = (double)(end_clock - start_clock) / CLOCKS_PER_SEC;
+
+        statistics_desc->reconstructor_krnl_mode_t = statistics_desc->reconstructor_krnl_mode_t + sys_time;
+        statistics_desc->reconstructor_usr_mode_t = statistics_desc->reconstructor_usr_mode_t + user_time;
+        gettimeofday(&start_time,NULL);
+        start_clock = clock();
         sem_post(&(memory_desc->reader_semaphore));
         
         //index in circular buffer
@@ -153,9 +169,14 @@ void dequeue(){
         time_t* date_read_pos=offset+datetimes;
         
         //down reader semaphore
+        start_slp_time = clock(); //timing stats
         sem_wait(&(memory_desc->buffer_reader_semaphore));
+        //timing stats
+        end_slp_time = clock();
+        sleep_t_pointer = (double)(end_slp_time-start_slp_time) / CLOCKS_PER_SEC;
         
-
+        
+        //variables for char and time_stamp
         char cur_char;
         time_t date_time;
         //read char and copy it in file
@@ -168,11 +189,16 @@ void dequeue(){
         //update UI
         update_cur_char(cur_char);
         update_date_time(date_time);
-
-        //update_text_view_with_file();
+        
         //up writer semaphore
-        sem_post(&(memory_desc->buffer_writer_semaphore));                                                                                                      
+        sem_post(&(memory_desc->buffer_writer_semaphore));       
+
+        //check eof
+        if(cur_char == EOF){
+            memory_desc->reconstructor_done = 1;
+        }                                                                             
         begin = clock();
+        
     }
     
 
@@ -200,28 +226,7 @@ void update_text_view(char *text){
     gtk_text_buffer_set_text(buffer_ui, text, -1);
 }
 
-void update_text_view_with_file() {
-    FILE * f = fopen(filepath ,"r");
-    char* file_contents;
-    long length;
-    if (f){
-        fseek(f,0,SEEK_END);
-        length = ftell(f);
-        fseek(f,0,SEEK_SET);
-        file_contents = malloc(length+1);
-        if (file_contents){
-            file_contents[length] = '\0';
-            fread(file_contents,1,length,f);
-            gboolean is_valid = g_utf8_validate(file_contents, -1, NULL);
-            if (is_valid) {
-                gtk_text_buffer_set_text(buffer_ui, file_contents, -1);
-            }
-            free(file_contents);
-        }
-        fclose(f);
-        
-    }
-}
+
 
 void *UI(void *arguments){
     // Initialize GTK

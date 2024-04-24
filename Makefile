@@ -201,6 +201,19 @@ Reconstructor/fast:
 .PHONY : Reconstructor/fast
 
 #=============================================================================
+# Target rules for targets named Statistics
+
+# Build rule for target.
+Statistics: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Statistics
+.PHONY : Statistics
+
+# fast build rule for target.
+Statistics/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Statistics.dir/build.make CMakeFiles/Statistics.dir/build
+.PHONY : Statistics/fast
+
+#=============================================================================
 # Target rules for targets named headers
 
 # Build rule for target.
@@ -298,6 +311,30 @@ Reconstructor.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Reconstructor.dir/build.make CMakeFiles/Reconstructor.dir/Reconstructor.c.s
 .PHONY : Reconstructor.c.s
 
+Statistics.o: Statistics.c.o
+.PHONY : Statistics.o
+
+# target to build an object file
+Statistics.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Statistics.dir/build.make CMakeFiles/Statistics.dir/Statistics.c.o
+.PHONY : Statistics.c.o
+
+Statistics.i: Statistics.c.i
+.PHONY : Statistics.i
+
+# target to preprocess a source file
+Statistics.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Statistics.dir/build.make CMakeFiles/Statistics.dir/Statistics.c.i
+.PHONY : Statistics.c.i
+
+Statistics.s: Statistics.c.s
+.PHONY : Statistics.s
+
+# target to generate assembly for a file
+Statistics.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Statistics.dir/build.make CMakeFiles/Statistics.dir/Statistics.c.s
+.PHONY : Statistics.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -314,6 +351,7 @@ help:
 	@echo "... Client"
 	@echo "... Creator"
 	@echo "... Reconstructor"
+	@echo "... Statistics"
 	@echo "... fort"
 	@echo "... Client.o"
 	@echo "... Client.i"
@@ -324,6 +362,9 @@ help:
 	@echo "... Reconstructor.o"
 	@echo "... Reconstructor.i"
 	@echo "... Reconstructor.s"
+	@echo "... Statistics.o"
+	@echo "... Statistics.i"
+	@echo "... Statistics.s"
 .PHONY : help
 
 

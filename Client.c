@@ -5,6 +5,7 @@ struct descriptor *memory_desc;
 int shared_memory_length;
 time_t *datetimes;
 void *buffer;
+struct statistics *statistics_desc;
 
 void *data;
 
@@ -18,6 +19,10 @@ struct stat stat_file;
 GtkTextBuffer *Gtkbuffer;
 char* file_Content=NULL;
 
+clock_t start_clock, end_clock, start_slp_time, end_slp_time;
+struct timeval start_time, end_time;
+double sys_time, user_time, sleep_t_pointer, sleep_t_read;
+
 void ReadWrite(){
         if (memory_desc->client_done)
         {
@@ -25,7 +30,11 @@ void ReadWrite(){
         }
         
         //Get position to read from file
+        start_slp_time = clock(); //timing stats
         sem_wait(&(memory_desc->writer_semaphore));
+        //timing stats
+        end_slp_time = clock();
+        sleep_t_pointer = (double)(end_slp_time-start_slp_time) / CLOCKS_PER_SEC;
         int offset=memory_desc->writer_pointer;
 
         if (offset>=stat_file.st_size)
@@ -38,6 +47,18 @@ void ReadWrite(){
         
 
         memory_desc->writer_pointer+=memory_desc->data_size;
+
+        //update kernel and user times
+        statistics_desc->client_slp_t=statistics_desc->client_slp_t+sleep_t_pointer+sleep_t_read;
+        gettimeofday(&end_time, NULL);
+        end_clock = clock();
+        sys_time = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1000000.0;
+        user_time = (double)(end_clock - start_clock) / CLOCKS_PER_SEC;
+
+        statistics_desc->client_krnl_mode_t = statistics_desc->client_krnl_mode_t + sys_time;
+        statistics_desc->client_usr_mode_t = statistics_desc->client_usr_mode_t + user_time;
+        gettimeofday(&start_time,NULL);
+        start_clock = clock();
         sem_post(&(memory_desc->writer_semaphore));
 
         int error=pread(Data_fd,data,memory_desc->data_size, offset);//Read from file and save on data;
@@ -52,10 +73,18 @@ void ReadWrite(){
         void* buffer_write_pos=offset+buffer;
         time_t* date_write_pos=offset+datetimes;
         time_t time_to_save = time(NULL);
-
+        start_slp_time = clock(); //timing stats
+        
         sem_wait(&(memory_desc->buffer_writer_semaphore));
+        //timing stats
+        end_slp_time = clock();
+        sleep_t_pointer = (double)(end_slp_time-start_slp_time) / CLOCKS_PER_SEC;
+        
         memmove(buffer_write_pos,data,memory_desc->data_size);
         *date_write_pos=time_to_save;
+        
+        
+
         sem_post(&(memory_desc->buffer_reader_semaphore));
         printf("data: %c \n",*((char*)data));
         sleep(interval);
@@ -151,7 +180,8 @@ int UI(int argc, char *argv[]) {
 
 
 int main(int argc, char *argv[]) {
-
+    start_clock = clock();
+    gettimeofday(&start_time,NULL);
 
     if (argc < 3) {
         fprintf(stderr, "Usage: %s <File> <Mode> [interval]\n Mode = Automatic|Manual\n", argv[0]);
@@ -222,6 +252,8 @@ int main(int argc, char *argv[]) {
     data=malloc(memory_desc->data_size);//Reserve space for memory
     file_Content=(char*)malloc(byte_to_show+1);
     file_Content[byte_to_show]='\0';
+
+    statistics_desc=shared_memory_ptr + descriptor_size;
 
 
     UI(argc, argv);

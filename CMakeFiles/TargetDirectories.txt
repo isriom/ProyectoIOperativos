@@ -1,6 +1,7 @@
 /home/abner/Desktop/Operativos/Proyecto1/ProyectoIOperativos/CMakeFiles/Creator.dir
 /home/abner/Desktop/Operativos/Proyecto1/ProyectoIOperativos/CMakeFiles/Client.dir
 /home/abner/Desktop/Operativos/Proyecto1/ProyectoIOperativos/CMakeFiles/Reconstructor.dir
+/home/abner/Desktop/Operativos/Proyecto1/ProyectoIOperativos/CMakeFiles/Statistics.dir
 /home/abner/Desktop/Operativos/Proyecto1/ProyectoIOperativos/CMakeFiles/edit_cache.dir
 /home/abner/Desktop/Operativos/Proyecto1/ProyectoIOperativos/CMakeFiles/rebuild_cache.dir
 /home/abner/Desktop/Operativos/Proyecto1/ProyectoIOperativos/CMakeFiles/list_install_components.dir
