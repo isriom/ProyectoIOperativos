@@ -9,16 +9,28 @@
 #include <sys/types.h>
 #include <time.h>
 #include <gtk-3.0/gtk/gtk.h>
+#include <signal.h>
 
 #include "Constants.h"
 #include "Libs/libFort/libfort-0.4.2/lib/fort.h"
 
+#define _POSIX_C_SOURCE >= 199309L
+
+void End(){
+    if(execute){
+        execute=0;
+        return
+    }
+    shm_unlink(shared_memory_name);
+    exit(3);
+}
+int execute=1;
 int main(int argc, char *argv[]) {
     int shared_memory_length;
     int shared_memory_fd;
     int data_size;
     void *shared_memory_ptr;
-
+    sigaction()
     shm_unlink(shared_memory_name);//Restart memory section
 
     if (argc != 3) {
@@ -88,34 +100,38 @@ int main(int argc, char *argv[]) {
     time_t *datetimes=shared_memory_ptr+descriptor_size+statistics_size;
     void *buffer=shared_memory_ptr+descriptor_size+statistics_size+shared_memory_length*sizeof(time_t);
     
-    while (memory_desc->data_size>0)
+    while ((memory_desc->data_size>0)&&execute)
     {
 
-    write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 12);
+        write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 12);
 
-    ft_table_t *table = ft_create_table();
-    /* Set "header" type for the first row */
-    ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
+        ft_table_t *table = ft_create_table();
+        /* Set "header" type for the first row */
+        ft_set_cell_prop(table, 0, FT_ANY_COLUMN, FT_CPROP_ROW_TYPE, FT_ROW_HEADER);
 
 
-    ft_write_ln(table, "N", "Data", "Time","N", "Data", "Time","N", "Data", "Time","N", "Data", "Time" );
+        ft_write_ln(table, "N", "Data", "Time","N", "Data", "Time","N", "Data", "Time","N", "Data", "Time" );
 
-    for (int i = 0; i < shared_memory_length/4; i++)
-    {
-        int index=i*4;
-        int error=ft_printf_ln(table,"%d|%c|%ld|%d|%c|%ld|%d|%c|%ld|%d|%c|%ld|"
-                                , index, *(char*)(buffer+index),*(datetimes+index)
-                                ,index+1, *(char*)(buffer+index+1),*(datetimes+index+1)
-                                ,index+2, *(char*)(buffer+index+2),*(datetimes+index+2)
-                                ,index+3, *(char*)(buffer+index+3),*(datetimes+index+3));
-       
+        for (int i = 0; i < shared_memory_length/4; i++)
+        {
+            int index=i*4;
+            int error=ft_printf_ln(table,"%d|%c|%ld|%d|%c|%ld|%d|%c|%ld|%d|%c|%ld|"
+                                    , index, *(char*)(buffer+index),*(datetimes+index)
+                                    ,index+1, *(char*)(buffer+index+1),*(datetimes+index+1)
+                                    ,index+2, *(char*)(buffer+index+2),*(datetimes+index+2)
+                                    ,index+3, *(char*)(buffer+index+3),*(datetimes+index+3));
+        
+        }
+        
+
+
+        printf("%s\n", ft_to_string(table));
+        ft_destroy_table(table);
+        sleep(1);
     }
     
 
 
-    printf("%s\n", ft_to_string(table));
-    ft_destroy_table(table);
-    sleep(1);
-    }
-    
+
+
 }

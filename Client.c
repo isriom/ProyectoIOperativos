@@ -66,10 +66,7 @@ void *write_loop(){
         while (!memory_desc->client_done)
         {
             ReadWrite();
-            printf("%d,%ld",0,stat_file.st_size);
         }
-
-            printf("%d,%ld",1,stat_file.st_size);
         return NULL;
 }
 
@@ -151,6 +148,7 @@ int UI(int argc, char *argv[]) {
     // Start the GTK main loop
     gtk_main();
 }
+
 
 int main(int argc, char *argv[]) {
 
